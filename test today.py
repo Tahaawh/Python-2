@@ -1,8 +1,16 @@
+import re
 import requests
 from requests.models import Response
 from bs4 import BeautifulSoup
 from arabic_reshaper import reshape
 from bidi.algorithm import get_display
+
+def clean_text(text: str) -> str:
+    # فقط حروف فارسی، فاصله و پرانتزها رو نگه می‌داریم
+    cleaned = re.sub(r'[^\sآ-ی()]+', '', text)
+    # فاصله‌های اضافه رو یکی می‌کنیم
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
 
 def check_website() -> Response | str:
     response = requests.get("http://chap-sch.ir/guide-books")
@@ -19,7 +27,11 @@ def extract_site(response: Response):
         for every_tr in all_tr:
             all_tds = every_tr.find_all("td")
             for every_td in all_tds:
-                print(get_display(reshape(every_td.text.strip())))
+                raw_text = every_td.text
+                cleaned = clean_text(raw_text)
+                reshaped = reshape(cleaned)
+                displayed = get_display(reshaped)
+                print(displayed)
 
 response = check_website()
 if isinstance(response, Response):
